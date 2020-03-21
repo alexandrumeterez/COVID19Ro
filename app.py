@@ -1,12 +1,17 @@
-from flask import Flask
+from flask import Flask, Markup, render_template
 from apscheduler.schedulers.background import BackgroundScheduler
 from backend.fetch import *
 from config.config import URL, UPDATE_INTERVAL
 import atexit
-from utils.plot_utils import generate_plot
+from utils.plot_utils import generate_plot, generate_overlap
 from datetime import datetime
+from bokeh.layouts import column
+from bokeh.resources import INLINE
 
-app = Flask(__name__)
+from bokeh.embed import file_html, components
+from bokeh.resources import CDN
+
+app = Flask(__name__, template_folder="templates")
 
 ro_data = {}
 last_updated = ""
@@ -21,21 +26,17 @@ def update_data():
 
 
 @app.route("/")
-def confirmed():
-    confirmed_cases_plot = generate_plot(ro_data, "confirmed", "blue", "red", "confirmed_cases_plot")
-    return confirmed_cases_plot
-
-
-@app.route("/morti")
-def deaths():
-    confirmed_cases_plot = generate_plot(ro_data, "deaths", "blue", "red", "confirmed_cases_plot")
-    return confirmed_cases_plot
-
-
-@app.route("/vindecati")
-def recovered():
-    confirmed_cases_plot = generate_plot(ro_data, "recovered", "blue", "red", "confirmed_cases_plot")
-    return confirmed_cases_plot
+def index():
+    overlapped_plot = generate_overlap(ro_data, "orange", "red", "green")
+    confirmed_cases_plot = generate_plot(ro_data, "confirmed", "orange", "gold")
+    deaths_cases_plot = generate_plot(ro_data, "deaths", "salmon", "red")
+    recovered_cases_plot = generate_plot(ro_data, "recovered", "yellowgreen", "green")
+    col_layout = column(overlapped_plot, confirmed_cases_plot, deaths_cases_plot, recovered_cases_plot,
+                        sizing_mode="stretch_width")
+    script, div = components(col_layout)
+    js_resources = INLINE.render_js()
+    css_resources = INLINE.render_css()
+    return render_template("index.html", js_resources=js_resources, css_resources=css_resources, script=script, div=div)
 
 
 #

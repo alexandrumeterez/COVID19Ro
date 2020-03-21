@@ -38,7 +38,7 @@ def update_data():
     last_updated = datetime.now().strftime("%H:%M:%S")
     update_models()
 
-
+@app.route("/index")
 @app.route("/")
 def index():
     overlapped_plot = generate_overlap(ro_data, "orange", "red", "green")
@@ -55,7 +55,9 @@ def index():
 
 @app.route("/predictions")
 def predictions():
-    logistic_plot = generate_logistic_plot(ro_data, sol, logistic_values[0], logistic_values[1], logistic_values[2])
+    logistic_plot = generate_logistic_exponential_plot(ro_data, sol, logistic_values[0], logistic_values[1],
+                                                       logistic_values[2], exponential_values[0], exponential_values[1],
+                                                       exponential_values[2])
     col_layout = column(logistic_plot, sizing_mode="stretch_width")
     script, div = components(col_layout)
     js_resources = INLINE.render_js()

@@ -64,23 +64,26 @@ def generate_overlap(data, line_color1, line_color2, line_color3):
     return plot
 
 
-def generate_logistic_plot(data, last_day_number, a, b, c):
+def generate_logistic_exponential_plot(data, last_day_number, a_logistic, b_logistic, c_logistic, a_exp, b_exp, c_exp):
     dates = list(data.keys())
 
     pred_x_range = list(range(0, last_day_number))
     xaxis_real = list(data.keys())
     xaxis_predicted = [dates[0] + timedelta(pred_x) for pred_x in pred_x_range]
     yaxis_real = [x["confirmed"] for x in data.values()]
-    yaxis_predicted = [logistic_model(x, a, b, c) for x in pred_x_range]
+    yaxis_predicted_logistic = [logistic_model(x, a_logistic, b_logistic, c_logistic) for x in pred_x_range]
+    yaxis_predicted_exponential = [exponential_model(x, a_exp, b_exp, c_exp) for x in pred_x_range]
 
-    plot = figure(x_axis_type="datetime", y_axis_label="Logistic")
+    plot = figure(x_axis_type="datetime", y_axis_label="Nr. cazuri confirmate", y_range=(-100, 1000))
 
     plot.xaxis.formatter = DatetimeTickFormatter(months=["%d/%m/%Y"], days=["%d/%m/%Y"], hours=["%d/%m/%Y"],
                                                  minutes=["%d/%m/%Y"])
 
-    plot.circle(x=xaxis_real, y=yaxis_real, fill_color="red", size=8)
-    plot.line(x=xaxis_predicted, y=yaxis_predicted, line_width=3, color="orange")
+    plot.line(x=xaxis_predicted, y=yaxis_predicted_logistic, line_width=3, color="blue",
+              legend="f(x)={:.2f}/(1 + exp(-(x-{:.2f})/{:.2f})".format(c_logistic, b_logistic, a_logistic))
+    plot.line(x=xaxis_predicted, y=yaxis_predicted_exponential, line_width=3, color="red",
+              legend="f(x)={:.2f}*exp({:.2f}(x-{:.2f}))".format(a_exp, b_exp, c_exp))
+    plot.circle(x=xaxis_real, y=yaxis_real, fill_color="orange", size=8, legend="Date reale")
+    plot.legend.location = "top_left"
     plot.add_tools(WheelZoomTool())
     return plot
-
-

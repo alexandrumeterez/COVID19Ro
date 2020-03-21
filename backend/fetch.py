@@ -20,9 +20,6 @@ def get_country_date_to_cases(country_data):
     for entry in country_data:
         confirmed = entry["confirmed"]
         date = entry["date"]
-
-        # datetime_obj = datetime.strptime(date, "%y-%m-%d")
-
         date_parts = date.split('-')
         year = date_parts[0]
         month = date_parts[1]

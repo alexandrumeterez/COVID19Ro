@@ -7,14 +7,27 @@ from utils.plot_utils import generate_plot, generate_overlap
 from datetime import datetime
 from bokeh.layouts import column
 from bokeh.resources import INLINE
-
-from bokeh.embed import file_html, components
-from bokeh.resources import CDN
+from bokeh.embed import components
+from models.predictive_models import *
+from scipy.optimize import curve_fit
+from scipy.optimize import fsolve
+from models.data import prepare_data, extract_variances
 
 app = Flask(__name__, template_folder="templates")
 
 ro_data = {}
 last_updated = ""
+logistic_values, logistic_cov, exponential_values, exponential_cov = None, None, None, None
+sol = None
+
+
+def update_models():
+    global logistic_values, logistic_cov, exponential_values, exponential_cov, sol
+    indices, confirmed_cases = prepare_data(ro_data)
+    logistic_values, logistic_cov = curve_fit(logistic_model, indices, confirmed_cases, p0=[2, 58, 100000])
+    exponential_values, exponential_cov = curve_fit(exponential_model, indices, confirmed_cases, p0=[1, 1, 1])
+    a, b, c = logistic_values[0], logistic_values[1], logistic_values[2]
+    sol = int(fsolve(lambda x: logistic_model(x, a, b, c) - int(c), b))
 
 
 def update_data():
@@ -23,6 +36,7 @@ def update_data():
     data = get_country_data(raw_json, "Romania")
     ro_data, _ = get_country_date_to_cases(data)
     last_updated = datetime.now().strftime("%H:%M:%S")
+    update_models()
 
 
 @app.route("/")
@@ -37,6 +51,11 @@ def index():
     js_resources = INLINE.render_js()
     css_resources = INLINE.render_css()
     return render_template("index.html", js_resources=js_resources, css_resources=css_resources, script=script, div=div)
+
+
+@app.route("/predictions")
+def predictions():
+    return "Test"
 
 
 #

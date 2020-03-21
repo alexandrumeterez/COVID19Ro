@@ -3,7 +3,7 @@ from apscheduler.schedulers.background import BackgroundScheduler
 from backend.fetch import *
 from config.config import URL, UPDATE_INTERVAL
 import atexit
-from utils.plot_utils import generate_plot, generate_overlap
+from utils.plot_utils import *
 from datetime import datetime
 from bokeh.layouts import column
 from bokeh.resources import INLINE
@@ -55,7 +55,13 @@ def index():
 
 @app.route("/predictions")
 def predictions():
-    return "Test"
+    logistic_plot = generate_logistic_plot(ro_data, sol, logistic_values[0], logistic_values[1], logistic_values[2])
+    col_layout = column(logistic_plot, sizing_mode="stretch_width")
+    script, div = components(col_layout)
+    js_resources = INLINE.render_js()
+    css_resources = INLINE.render_css()
+    return render_template("predictions.html", js_resources=js_resources, css_resources=css_resources, script=script,
+                           div=div)
 
 
 #

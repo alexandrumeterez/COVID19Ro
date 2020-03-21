@@ -4,7 +4,8 @@ from bokeh.embed import file_html
 from bokeh.models.formatters import DatetimeTickFormatter
 from bokeh.models import WheelZoomTool, HoverTool
 from flask import Markup
-from datetime import datetime
+from datetime import datetime, timedelta
+from models.predictive_models import logistic_model, exponential_model
 
 TRANSLATION = {
     "confirmed": "Nr. cazuri confirmate",
@@ -61,3 +62,25 @@ def generate_overlap(data, line_color1, line_color2, line_color3):
     plot.add_tools(WheelZoomTool())
 
     return plot
+
+
+def generate_logistic_plot(data, last_day_number, a, b, c):
+    dates = list(data.keys())
+
+    pred_x_range = list(range(0, last_day_number))
+    xaxis_real = list(data.keys())
+    xaxis_predicted = [dates[0] + timedelta(pred_x) for pred_x in pred_x_range]
+    yaxis_real = [x["confirmed"] for x in data.values()]
+    yaxis_predicted = [logistic_model(x, a, b, c) for x in pred_x_range]
+
+    plot = figure(x_axis_type="datetime", y_axis_label="Logistic")
+
+    plot.xaxis.formatter = DatetimeTickFormatter(months=["%d/%m/%Y"], days=["%d/%m/%Y"], hours=["%d/%m/%Y"],
+                                                 minutes=["%d/%m/%Y"])
+
+    plot.circle(x=xaxis_real, y=yaxis_real, fill_color="red", size=8)
+    plot.line(x=xaxis_predicted, y=yaxis_predicted, line_width=3, color="orange")
+    plot.add_tools(WheelZoomTool())
+    return plot
+
+

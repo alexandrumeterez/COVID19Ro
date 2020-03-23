@@ -125,12 +125,11 @@ def predictions():
                            div=div)
 
 
-#
-# scheduler = BackgroundScheduler()
-# scheduler.add_job(func=update_data, trigger="interval", seconds=UPDATE_INTERVAL)
-# scheduler.start()
+scheduler = BackgroundScheduler()
+scheduler.add_job(func=update_data, trigger="interval", hours=UPDATE_INTERVAL)
+scheduler.start()
 
 if __name__ == '__main__':
-    # atexit.register(lambda: scheduler.shutdown())
+    atexit.register(lambda: scheduler.shutdown())
     update_data()
     app.run()

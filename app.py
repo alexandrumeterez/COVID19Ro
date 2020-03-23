@@ -11,7 +11,8 @@ from bokeh.embed import components
 from models.predictive_models import *
 from scipy.optimize import curve_fit
 from scipy.optimize import fsolve
-from models.data import prepare_data, extract_variances
+from models.data import prepare_data
+
 
 app = Flask(__name__, template_folder="templates")
 

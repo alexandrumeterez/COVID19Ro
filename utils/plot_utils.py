@@ -4,6 +4,7 @@ from bokeh.models import WheelZoomTool, HoverTool
 from datetime import timedelta
 from models.predictive_models import logistic_model, exponential_model
 from datetime import datetime
+from bokeh.core.json_encoder import serialize_json
 TRANSLATION = {
     "confirmed": "Nr. cazuri confirmate",
     "deaths": "Nr. morti",
@@ -12,7 +13,7 @@ TRANSLATION = {
 
 
 def generate_plot(data, type_of_case, line_color, circle_color):
-    plot = figure(x_axis_type="datetime", y_axis_label=TRANSLATION[type_of_case])
+    plot = figure(x_axis_type="datetime", y_axis_label=TRANSLATION[type_of_case], y_range=(-100, 500))
 
     xaxis = list(data.keys())
     yaxis = [x[type_of_case] for x in data.values()]
@@ -23,20 +24,20 @@ def generate_plot(data, type_of_case, line_color, circle_color):
 
     plot.xaxis.formatter = DatetimeTickFormatter(months=["%d/%m/%Y"], days=["%d/%m/%Y"], hours=["%d/%m/%Y"],
                                                  minutes=["%d/%m/%Y"])
-    print(xaxis)
 
     plot.line(source=source, x='x_axis', y='y_axis', line_width=3, color=line_color)
     plot.circle(source=source, x='x_axis', y='y_axis', fill_color=circle_color, size=8)
 
-    plot.add_tools(WheelZoomTool())
+    zoom_tool = WheelZoomTool()
+    plot.add_tools(zoom_tool)
+    plot.toolbar.active_scroll = zoom_tool
     plot.add_tools(
         HoverTool(tooltips=[('Data', '@x_axis{%d/%m/%Y}'), ('Cazuri', '@y_axis')], formatters={"@x_axis": "datetime"}))
-
     return plot
 
 
 def generate_overlap(data, line_color1, line_color2, line_color3):
-    plot = figure(x_axis_type="datetime")
+    plot = figure(x_axis_type="datetime", y_range=(-100, 1000))
 
     xaxis = list(data.keys())
     yaxis_confirmed = [x["confirmed"] for x in data.values()]
@@ -56,7 +57,9 @@ def generate_overlap(data, line_color1, line_color2, line_color3):
     plot.line(source=source, x='x_axis', y='y_axis_deaths', color=line_color2, line_width=3, legend_label="Morti")
     plot.line(source=source, x='x_axis', y='y_axis_recovered', color=line_color3, line_width=3, legend_label="Vindecati")
 
-    plot.add_tools(WheelZoomTool())
+    zoom_tool = WheelZoomTool()
+    plot.add_tools(zoom_tool)
+    plot.toolbar.active_scroll = zoom_tool
 
     return plot
 
@@ -82,5 +85,7 @@ def generate_logistic_exponential_plot(data, last_day_number, a_logistic, b_logi
               legend_label="f(x)={:.2f}*exp({:.2f}(x-{:.2f}))".format(a_exp, b_exp, c_exp))
     plot.circle(x=xaxis_real, y=yaxis_real, fill_color="orange", size=8, legend_label="Date reale")
     plot.legend.location = "top_left"
-    plot.add_tools(WheelZoomTool())
+    zoom_tool = WheelZoomTool()
+    plot.add_tools(zoom_tool)
+    plot.toolbar.active_scroll = zoom_tool
     return plot

@@ -1,4 +1,4 @@
-from flask import Flask, Markup, render_template
+from flask import Flask, render_template
 from apscheduler.schedulers.background import BackgroundScheduler
 from backend.fetch import *
 from config.config import URL, UPDATE_INTERVAL
@@ -15,7 +15,6 @@ from models.data import prepare_data
 from utils.extra import mongodb_to_dict
 from pymongo import MongoClient
 from bokeh.document.document import Document
-from pprint import pprint
 
 doc = Document()
 client = MongoClient()
@@ -59,28 +58,19 @@ def update_data():
     last_updated = datetime.now().strftime("$d/%m/%Y %H:%M:%S")
     db.last_updated.update_one({'_id': 1}, {'$set': {'last_updated': last_updated}}, upsert=True)
     update_models()
+    update_plots()
 
 
-@app.route("/index")
-@app.route("/")
-def index():
+def update_plots():
     ro_data = mongodb_to_dict(db.cases.find({}))
     overlapped_plot = generate_overlap(ro_data, "orange", "red", "green")
     confirmed_cases_plot = generate_plot(ro_data, "confirmed", "orange", "gold")
     deaths_cases_plot = generate_plot(ro_data, "deaths", "salmon", "red")
     recovered_cases_plot = generate_plot(ro_data, "recovered", "yellowgreen", "green")
+    col_layout_index = column(overlapped_plot, confirmed_cases_plot, deaths_cases_plot, recovered_cases_plot,
+                              sizing_mode="stretch_width")
+    script_index, div_index = components(col_layout_index)
 
-    col_layout = column(overlapped_plot, confirmed_cases_plot, deaths_cases_plot, recovered_cases_plot,
-                        sizing_mode="stretch_width")
-    script, div = components(col_layout)
-    js_resources = INLINE.render_js()
-    css_resources = INLINE.render_css()
-    return render_template("index.html", js_resources=js_resources, css_resources=css_resources, script=script, div=div)
-
-
-@app.route("/predictions")
-def predictions():
-    ro_data = mongodb_to_dict(db.cases.find({}))
     params = db.models_params.find_one({'_id': 1})
     logistic_values = params['logistic_values']
     exponential_values = params['exponential_values']
@@ -89,8 +79,46 @@ def predictions():
     logistic_plot = generate_logistic_exponential_plot(ro_data, sol, logistic_values[0], logistic_values[1],
                                                        logistic_values[2], exponential_values[0], exponential_values[1],
                                                        exponential_values[2])
-    col_layout = column(logistic_plot, sizing_mode="stretch_width")
-    script, div = components(col_layout)
+    col_layout_preds = column(logistic_plot, sizing_mode="stretch_width")
+    script_preds, div_preds = components(col_layout_preds)
+
+    db.plots_index.update_one({'_id': 1},
+                              {
+                                  '$set':
+                                      {
+                                          'script_index': script_index,
+                                          'div_index': div_index
+                                      }
+                              },
+                              upsert=True)
+
+    db.plots_preds.update_one({'_id': 1},
+                              {
+                                  '$set':
+                                      {
+                                          'script_preds': script_preds,
+                                          'div_preds': div_preds
+                                      }
+                              },
+                              upsert=True)
+
+
+@app.route("/index")
+@app.route("/")
+def index():
+    plots_index = db.plots_index.find_one({'_id': 1})
+    script, div = plots_index['script_index'], plots_index['div_index']
+
+    js_resources = INLINE.render_js()
+    css_resources = INLINE.render_css()
+    return render_template("index.html", js_resources=js_resources, css_resources=css_resources, script=script, div=div)
+
+
+@app.route("/predictions")
+def predictions():
+    plots_preds = db.plots_preds.find_one({'_id': 1})
+    script, div = plots_preds['script_preds'], plots_preds['div_preds']
+
     js_resources = INLINE.render_js()
     css_resources = INLINE.render_css()
     return render_template("predictions.html", js_resources=js_resources, css_resources=css_resources, script=script,
@@ -105,4 +133,4 @@ def predictions():
 if __name__ == '__main__':
     # atexit.register(lambda: scheduler.shutdown())
     update_data()
-    app.run(debug=True)
+    app.run()

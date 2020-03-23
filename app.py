@@ -14,12 +14,9 @@ from scipy.optimize import fsolve
 from models.data import prepare_data
 from utils.extra import mongodb_to_dict
 from pymongo import MongoClient
-from bokeh.document.document import Document
-
 import os
 
-doc = Document()
-client = MongoClient(os.environ['MONGODB_URI'])
+client = MongoClient(os.environ['MONGODB_URI'], retryWrites=False)
 db = client.get_default_database()
 
 app = Flask(__name__, template_folder="templates", static_folder='static')

@@ -12,40 +12,64 @@ from models.predictive_models import *
 from scipy.optimize import curve_fit
 from scipy.optimize import fsolve
 from models.data import prepare_data
+from utils.extra import mongodb_to_dict
+from pymongo import MongoClient
+from bokeh.document.document import Document
+from pprint import pprint
 
+doc = Document()
+client = MongoClient()
+db = client.covid
 
 app = Flask(__name__, template_folder="templates")
 
-ro_data = {}
-last_updated = ""
-logistic_values, logistic_cov, exponential_values, exponential_cov = None, None, None, None
-sol = None
-
 
 def update_models():
-    global logistic_values, logistic_cov, exponential_values, exponential_cov, sol
+    ro_data = mongodb_to_dict(db.cases.find({}))
     indices, confirmed_cases = prepare_data(ro_data)
-    logistic_values, logistic_cov = curve_fit(logistic_model, indices, confirmed_cases, p0=[2, 58, 100000])
-    exponential_values, exponential_cov = curve_fit(exponential_model, indices, confirmed_cases, p0=[1, 1, 1])
+    logistic_values, _ = curve_fit(logistic_model, indices, confirmed_cases, p0=[2, 58, 100000])
+    exponential_values, _ = curve_fit(exponential_model, indices, confirmed_cases, p0=[1, 1, 1])
     a, b, c = logistic_values[0], logistic_values[1], logistic_values[2]
     sol = int(fsolve(lambda x: logistic_model(x, a, b, c) - int(c), b))
 
+    models_params = db.models_params
+
+    result = models_params.update_one({'_id': 1},
+                                      {'$set':
+                                          {
+                                              'logistic_values': list(logistic_values),
+                                              'exponential_values': list(exponential_values),
+                                              'sol': sol
+                                          }
+                                      },
+                                      upsert=True)
+
 
 def update_data():
-    global ro_data, last_updated
     raw_json = get_raw_json(URL)
     data = get_country_data(raw_json, "Romania")
-    ro_data, _ = get_country_date_to_cases(data)
-    last_updated = datetime.now().strftime("%H:%M:%S")
+    _, cases_list = get_country_date_to_cases(data)
+
+    cases = db.cases
+    for case in cases_list:
+        result = cases.update_one({'_id': case[0]}, {
+            '$set': {'confirmed': case[1]['confirmed'], 'deaths': case[1]['deaths'],
+                     'recovered': case[1]['recovered']}},
+                                  upsert=True)
+    last_updated = datetime.now().strftime("$d/%m/%Y %H:%M:%S")
+    db.last_updated.update_one({'_id': 1}, {'$set': {'last_updated': last_updated}}, upsert=True)
     update_models()
+
 
 @app.route("/index")
 @app.route("/")
 def index():
+    ro_data = mongodb_to_dict(db.cases.find({}))
     overlapped_plot = generate_overlap(ro_data, "orange", "red", "green")
     confirmed_cases_plot = generate_plot(ro_data, "confirmed", "orange", "gold")
     deaths_cases_plot = generate_plot(ro_data, "deaths", "salmon", "red")
     recovered_cases_plot = generate_plot(ro_data, "recovered", "yellowgreen", "green")
+
     col_layout = column(overlapped_plot, confirmed_cases_plot, deaths_cases_plot, recovered_cases_plot,
                         sizing_mode="stretch_width")
     script, div = components(col_layout)
@@ -56,6 +80,12 @@ def index():
 
 @app.route("/predictions")
 def predictions():
+    ro_data = mongodb_to_dict(db.cases.find({}))
+    params = db.models_params.find_one({'_id': 1})
+    logistic_values = params['logistic_values']
+    exponential_values = params['exponential_values']
+    sol = params['sol']
+
     logistic_plot = generate_logistic_exponential_plot(ro_data, sol, logistic_values[0], logistic_values[1],
                                                        logistic_values[2], exponential_values[0], exponential_values[1],
                                                        exponential_values[2])

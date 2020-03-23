@@ -21,7 +21,7 @@ doc = Document()
 client = MongoClient()
 db = client.covid
 
-app = Flask(__name__, template_folder="templates")
+app = Flask(__name__, template_folder="templates", static_folder='/static')
 
 
 def update_models():

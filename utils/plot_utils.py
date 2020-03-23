@@ -5,6 +5,7 @@ from datetime import timedelta
 from models.predictive_models import logistic_model, exponential_model
 from datetime import datetime
 from bokeh.core.json_encoder import serialize_json
+
 TRANSLATION = {
     "confirmed": "Nr. cazuri confirmate",
     "deaths": "Nr. morti",
@@ -12,8 +13,9 @@ TRANSLATION = {
 }
 
 
-def generate_plot(data, type_of_case, line_color, circle_color):
-    plot = figure(x_axis_type="datetime", y_axis_label=TRANSLATION[type_of_case], y_range=(-100, 500))
+def generate_plot(data, type_of_case, line_color, circle_color, range_type):
+    plot = figure(x_axis_type="datetime", y_axis_label=TRANSLATION[type_of_case],
+                  y_axis_type=range_type)
 
     xaxis = list(data.keys())
     yaxis = [x[type_of_case] for x in data.values()]
@@ -36,8 +38,8 @@ def generate_plot(data, type_of_case, line_color, circle_color):
     return plot
 
 
-def generate_overlap(data, line_color1, line_color2, line_color3):
-    plot = figure(x_axis_type="datetime", y_range=(-100, 1000))
+def generate_overlap(data, line_color1, line_color2, line_color3, range_type):
+    plot = figure(x_axis_type="datetime", y_axis_type=range_type)
 
     xaxis = list(data.keys())
     yaxis_confirmed = [x["confirmed"] for x in data.values()]
@@ -53,9 +55,11 @@ def generate_overlap(data, line_color1, line_color2, line_color3):
     })
     plot.xaxis.formatter = DatetimeTickFormatter(months=["%d/%m/%Y"], days=["%d/%m/%Y"], hours=["%d/%m/%Y"],
                                                  minutes=["%d/%m/%Y"])
-    plot.line(source=source, x='x_axis', y='y_axis_confirmed', color=line_color1, line_width=3, legend_label="Confirmate")
+    plot.line(source=source, x='x_axis', y='y_axis_confirmed', color=line_color1, line_width=3,
+              legend_label="Confirmate")
     plot.line(source=source, x='x_axis', y='y_axis_deaths', color=line_color2, line_width=3, legend_label="Morti")
-    plot.line(source=source, x='x_axis', y='y_axis_recovered', color=line_color3, line_width=3, legend_label="Vindecati")
+    plot.line(source=source, x='x_axis', y='y_axis_recovered', color=line_color3, line_width=3,
+              legend_label="Vindecati")
 
     zoom_tool = WheelZoomTool()
     plot.add_tools(zoom_tool)
@@ -64,7 +68,8 @@ def generate_overlap(data, line_color1, line_color2, line_color3):
     return plot
 
 
-def generate_logistic_exponential_plot(data, last_day_number, a_logistic, b_logistic, c_logistic, a_exp, b_exp, c_exp):
+def generate_logistic_exponential_plot(data, last_day_number, a_logistic, b_logistic, c_logistic, a_exp, b_exp, c_exp,
+                                       range_type):
     dates = list(data.keys())
 
     pred_x_range = list(range(0, last_day_number))
@@ -74,7 +79,8 @@ def generate_logistic_exponential_plot(data, last_day_number, a_logistic, b_logi
     yaxis_predicted_logistic = [logistic_model(x, a_logistic, b_logistic, c_logistic) for x in pred_x_range]
     yaxis_predicted_exponential = [exponential_model(x, a_exp, b_exp, c_exp) for x in pred_x_range]
 
-    plot = figure(x_axis_type="datetime", y_axis_label="Nr. cazuri confirmate", y_range=(-100, 1000))
+    plot = figure(x_axis_type="datetime", y_axis_label="Nr. cazuri confirmate", y_range=(-100, 1000),
+                  y_axis_type=range_type)
 
     plot.xaxis.formatter = DatetimeTickFormatter(months=["%d/%m/%Y"], days=["%d/%m/%Y"], hours=["%d/%m/%Y"],
                                                  minutes=["%d/%m/%Y"])

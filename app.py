@@ -15,6 +15,7 @@ from models.data import prepare_data
 from utils.extra import mongodb_to_dict
 from pymongo import MongoClient
 import os
+from bokeh.models.widgets import Tabs, Panel
 
 client = MongoClient(os.environ['MONGODB_URI'], retryWrites=False)
 db = client.get_default_database()
@@ -62,10 +63,41 @@ def update_data():
 
 def update_plots():
     ro_data = mongodb_to_dict(db.cases.find({}))
-    overlapped_plot = generate_overlap(ro_data, "orange", "red", "green")
-    confirmed_cases_plot = generate_plot(ro_data, "confirmed", "orange", "gold")
-    deaths_cases_plot = generate_plot(ro_data, "deaths", "salmon", "red")
-    recovered_cases_plot = generate_plot(ro_data, "recovered", "yellowgreen", "green")
+
+    overlapped_plot = Tabs(tabs=[
+        Panel(
+            child=column(generate_overlap(ro_data, "orange", "red", "green", 'linear'), sizing_mode="stretch_width"),
+            title="Liniar"),
+        Panel(child=column(generate_overlap(ro_data, "orange", "red", "green", 'log'), sizing_mode="stretch_width"),
+              title="Logaritmic")
+    ], sizing_mode="stretch_width")
+
+    confirmed_cases_plot = Tabs(tabs=[
+        Panel(
+            child=column(generate_plot(ro_data, "confirmed", "orange", "gold", 'linear'), sizing_mode="stretch_width"),
+            title="Liniar"),
+        Panel(child=column(generate_plot(ro_data, "confirmed", "orange", "gold", 'log'), sizing_mode="stretch_width"),
+              title="Logaritmic")
+    ], sizing_mode="stretch_width")
+
+    deaths_cases_plot = Tabs(tabs=[
+        Panel(
+            child=column(generate_plot(ro_data, "deaths", "salmon", "red", 'linear'), sizing_mode="stretch_width"),
+            title="Liniar"),
+        Panel(child=column(generate_plot(ro_data, "deaths", "salmon", "red", 'log'), sizing_mode="stretch_width"),
+              title="Logaritmic")
+    ], sizing_mode="stretch_width")
+
+    recovered_cases_plot = Tabs(tabs=[
+        Panel(
+            child=column(generate_plot(ro_data, "recovered", "yellowgreen", "green", 'linear'),
+                         sizing_mode="stretch_width"),
+            title="Liniar"),
+        Panel(child=column(generate_plot(ro_data, "recovered", "yellowgreen", "green", 'log'),
+                           sizing_mode="stretch_width"),
+              title="Logaritmic")
+    ], sizing_mode="stretch_width")
+
     col_layout_index = column(overlapped_plot, confirmed_cases_plot, deaths_cases_plot, recovered_cases_plot,
                               sizing_mode="stretch_width")
     script_index, div_index = components(col_layout_index)
@@ -77,7 +109,7 @@ def update_plots():
 
     logistic_plot = generate_logistic_exponential_plot(ro_data, sol, logistic_values[0], logistic_values[1],
                                                        logistic_values[2], exponential_values[0], exponential_values[1],
-                                                       exponential_values[2])
+                                                       exponential_values[2], 'linear')
     col_layout_preds = column(logistic_plot, sizing_mode="stretch_width")
     script_preds, div_preds = components(col_layout_preds)
 
@@ -139,4 +171,4 @@ scheduler.start()
 if __name__ == '__main__':
     atexit.register(lambda: scheduler.shutdown())
     update_data()
-    app.run(host='0.0.0.0', port=os.environ.get('PORT', 8000))
+    app.run(host='0.0.0.0', port=os.environ.get('PORT', 5000))

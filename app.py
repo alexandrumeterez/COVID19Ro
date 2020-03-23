@@ -20,7 +20,7 @@ doc = Document()
 client = MongoClient()
 db = client.covid
 
-app = Flask(__name__, template_folder="templates", static_folder='/static')
+app = Flask(__name__, template_folder="templates", static_folder='static')
 
 
 def update_models():
@@ -55,7 +55,7 @@ def update_data():
             '$set': {'confirmed': case[1]['confirmed'], 'deaths': case[1]['deaths'],
                      'recovered': case[1]['recovered']}},
                                   upsert=True)
-    last_updated = datetime.now().strftime("$d/%m/%Y %H:%M:%S")
+    last_updated = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
     db.last_updated.update_one({'_id': 1}, {'$set': {'last_updated': last_updated}}, upsert=True)
     update_models()
     update_plots()
@@ -108,22 +108,28 @@ def update_plots():
 def index():
     plots_index = db.plots_index.find_one({'_id': 1})
     script, div = plots_index['script_index'], plots_index['div_index']
+    last_updated = db.last_updated.find_one({'_id': 1})['last_updated']
 
     js_resources = INLINE.render_js()
     css_resources = INLINE.render_css()
-    return render_template("index.html", js_resources=js_resources, css_resources=css_resources, script=script, div=div)
+    return render_template("index.html", js_resources=js_resources, css_resources=css_resources, script=script,
+                           div=div, last_updated=last_updated)
 
 
 @app.route("/predictions")
 def predictions():
     plots_preds = db.plots_preds.find_one({'_id': 1})
     script, div = plots_preds['script_preds'], plots_preds['div_preds']
-
+    last_updated = db.last_updated.find_one({'_id': 1})['last_updated']
     js_resources = INLINE.render_js()
     css_resources = INLINE.render_css()
     return render_template("predictions.html", js_resources=js_resources, css_resources=css_resources, script=script,
-                           div=div)
+                           div=div, last_updated=last_updated)
 
+@app.route("/sources")
+def sources():
+    last_updated = db.last_updated.find_one({'_id': 1})['last_updated']
+    return render_template("sources.html", last_updated=last_updated)
 
 scheduler = BackgroundScheduler()
 scheduler.add_job(func=update_data, trigger="interval", hours=UPDATE_INTERVAL)

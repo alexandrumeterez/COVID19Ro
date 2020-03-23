@@ -1,0 +1,42 @@
+{% extends 'base.html' %}
+{% block title %}Surse{% endblock %}
+{% block scripts %}
+{% endblock %}
+{% block sidebar %}
+<ul class="list-unstyled components mb-5">
+    <li>
+        <a href="{{ url_for('index') }}"><span class="fa fa-home mr-3"></span>Situatia generala</a>
+    </li>
+    <li>
+        <a href="{{ url_for('predictions') }}"><span class="fa fa-user mr-3"></span>Predictii</a>
+    </li>
+    <li class="active">
+        <a href="{{ url_for('sources') }}"><span class="fa fa-sticky-note mr-3"></span> Surse</a>
+    </li>
+    <li>
+        <center>
+            Updatat: <b>{{ last_updated }}</b>
+        </center>
+    </li>
+</ul>
+{% endblock %}
+{% block content %}
+<h3>Despre</h3>
+<p>Acest site a fost creat cu scopul de a centraliza datele despre tara noastra in timpul acestei crize.
+    De asemenea, ofera niste estimari grosiere pentru evolutia bolii pe teritoriul Romaniei. De remarcat ca,
+    daca practicam social distancing si ascultam de sfaturile OMS, ne vom situa pe curba logistica. Altfel,
+    de la o zi la alta, se va extinde curba exponentiala. Daca dati zoom pe curba logistica, se vede
+    ziua in care se estimeaza terminarea epidemiei. De remarcat ca modelul este unul slab, care nu are in vedere
+    aspecte ca: numarul variabil al populatiei totale (bazat pe revenirea in tara a romanilor din diaspora),
+    alti factori de risc la care sunt expuse unele grupuri ale populatiei etc. Insa, este un bun model
+    pentru cazurile extreme.</p>
+<h3>Sursele de date</h3>
+<p>Site-ul culege datele direct de la OMS si CDC, valabile <a href="https://github.com/CSSEGISandData/COVID-19">la
+    aceasta adresa.</a>. Pentru a le accesa, se fac requesturi odata la <b>3 ore</b> la <a
+        href="https://github.com/pomber/covid19">acest API</a>,
+    care prelucreaza datele in format .csv de pe sursa oficial intr-un format .json. Din acest motiv,
+    datele afisate sunt limitate la aceeasi rata de updatare ca cele de pe sursa oficiala, insemnand ca pot fi in urma
+    cu 24h fata de cele de pe site-urile de stiri locale.</p>
+<h3>Contact</h3>
+Pentru orice fel de intrebare: <a href="mailto:alexandrumeterez@gmail.com">Alexandru Meterez</a>
+{% endblock %}

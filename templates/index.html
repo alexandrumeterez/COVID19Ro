@@ -1,27 +1,12 @@
-<!doctype html>
-<html lang="en">
-<head>
-    <meta charset="utf-8">
-    <meta http-equiv="content-type" content="text/html; charset=utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <link rel="stylesheet" href="https://www.w3schools.com/w3css/4/w3.css">
-    <title>General</title>
-
-    <link href="https://fonts.googleapis.com/css?family=Poppins:300,400,500,600,700,800,900" rel="stylesheet">
-    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
-
-    {{ js_resources|indent(4)|safe }}
-    {{ css_resources|indent(4)|safe }}
-    {{ script|indent(4)|safe }}
-</head>
-<body>
-
-<div class="wrapper d-flex align-items-stretch">
-    <nav id="sidebar">
-
-    <h1><a href="index.html" class="logo">Project Name</a></h1>
-    <ul class="list-unstyled components mb-5">
+{% extends 'base.html' %}
+{% block title %}General{% endblock %}
+{% block scripts %}
+{{ js_resources|indent(4)|safe }}
+{{ css_resources|indent(4)|safe }}
+{{ script|indent(4)|safe }}
+{% endblock %}
+{% block sidebar %}
+<ul class="list-unstyled components mb-5">
     <li class="active">
         <a href="{{ url_for('index') }}"><span class="fa fa-home mr-3"></span>Situatia generala</a>
     </li>
@@ -29,14 +14,15 @@
         <a href="{{ url_for('predictions') }}"><span class="fa fa-user mr-3"></span>Predictii</a>
     </li>
     <li>
-        <a href="#"><span class="fa fa-sticky-note mr-3"></span> Surse</a>
+        <a href="{{ url_for('sources') }}"><span class="fa fa-sticky-note mr-3"></span> Surse</a>
     </li>
-    </ul>
-
-    </nav>
-
-    <div id="content" class="p-4 p-md-5 pt-5">
-        {{ div|indent(4)|safe }}</div>
-    </div>
-</body>
-</html>
+    <li>
+        <center>
+            Updatat: <b>{{ last_updated }}</b>
+        </center>
+    </li>
+</ul>
+{% endblock %}
+{% block content %}
+    {{ div|indent(4)|safe }}
+{% endblock %}

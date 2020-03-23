@@ -16,9 +16,11 @@ from utils.extra import mongodb_to_dict
 from pymongo import MongoClient
 from bokeh.document.document import Document
 
+import os
+
 doc = Document()
-client = MongoClient()
-db = client.covid
+client = MongoClient(os.environ['MONGODB_URI'])
+db = client.get_default_database()
 
 app = Flask(__name__, template_folder="templates", static_folder='static')
 
@@ -126,10 +128,12 @@ def predictions():
     return render_template("predictions.html", js_resources=js_resources, css_resources=css_resources, script=script,
                            div=div, last_updated=last_updated)
 
+
 @app.route("/sources")
 def sources():
     last_updated = db.last_updated.find_one({'_id': 1})['last_updated']
     return render_template("sources.html", last_updated=last_updated)
+
 
 scheduler = BackgroundScheduler()
 scheduler.add_job(func=update_data, trigger="interval", hours=UPDATE_INTERVAL)

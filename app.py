@@ -1,7 +1,7 @@
 from flask import Flask, render_template
 from apscheduler.schedulers.background import BackgroundScheduler
 from backend.fetch import *
-from config.config import URL, UPDATE_INTERVAL
+from config.config import *
 import atexit
 from utils.plot_utils import *
 from datetime import datetime
@@ -16,8 +16,9 @@ from utils.extra import mongodb_to_dict
 from pymongo import MongoClient
 import os
 
-client = MongoClient(os.environ['MONGODB_URI'], retryWrites=False)
-db = client.get_default_database()
+# client = MongoClient(os.environ['MONGODB_URI'], retryWrites=False)
+client = MongoClient()
+db = client.covid
 
 app = Flask(__name__, template_folder="templates", static_folder='static')
 
@@ -25,7 +26,7 @@ app = Flask(__name__, template_folder="templates", static_folder='static')
 def update_models():
     ro_data = mongodb_to_dict(db.cases.find({}))
     indices, confirmed_cases = prepare_data(ro_data)
-    logistic_values, _ = curve_fit(logistic_model, indices, confirmed_cases, p0=[2, 58, 100000])
+    logistic_values, _ = curve_fit(logistic_model, indices, confirmed_cases, p0=[2, 58, 10000])
     exponential_values, _ = curve_fit(exponential_model, indices, confirmed_cases, p0=[1, 1, 1])
     a, b, c = logistic_values[0], logistic_values[1], logistic_values[2]
     sol = int(fsolve(lambda x: logistic_model(x, a, b, c) - int(c), b))
@@ -44,15 +45,16 @@ def update_models():
 
 
 def update_data():
-    raw_json = get_raw_json(URL)
-    data = get_country_data(raw_json, "Romania")
+    data = get_cases(get_big_df(URL_CONFIRMED, URL_DEATHS))
     _, cases_list = get_country_date_to_cases(data)
 
     cases = db.cases
     for case in cases_list:
+        print(case[0])
+        print(case[1]['confirmed'])
+        print(case[1]['deaths'])
         result = cases.update_one({'_id': case[0]}, {
-            '$set': {'confirmed': case[1]['confirmed'], 'deaths': case[1]['deaths'],
-                     'recovered': case[1]['recovered']}},
+            '$set': {'confirmed': case[1]['confirmed'], 'deaths': case[1]['deaths']}},
                                   upsert=True)
     last_updated = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
     db.last_updated.update_one({'_id': 1}, {'$set': {'last_updated': last_updated}}, upsert=True)
@@ -62,11 +64,10 @@ def update_data():
 
 def update_plots():
     ro_data = mongodb_to_dict(db.cases.find({}))
-    overlapped_plot = generate_overlap(ro_data, "orange", "red", "green")
+    overlapped_plot = generate_overlap(ro_data, "orange", "red")
     confirmed_cases_plot = generate_plot(ro_data, "confirmed", "orange", "gold")
     deaths_cases_plot = generate_plot(ro_data, "deaths", "salmon", "red")
-    recovered_cases_plot = generate_plot(ro_data, "recovered", "yellowgreen", "green")
-    col_layout_index = column(overlapped_plot, confirmed_cases_plot, deaths_cases_plot, recovered_cases_plot,
+    col_layout_index = column(overlapped_plot, confirmed_cases_plot, deaths_cases_plot,
                               sizing_mode="stretch_width")
     script_index, div_index = components(col_layout_index)
 

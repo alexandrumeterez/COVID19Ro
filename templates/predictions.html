@@ -24,5 +24,18 @@
 </ul>
 {% endblock %}
 {% block content %}
-    {{ div|indent(4)|safe }}
+{{ div|indent(4)|safe }}
+<h3>Explicatie</h3>
+<p>Cele 2 curbe reprezinta cele 2 scenarii extreme legate de raspandirea epidemiei pe teritoriul Romaniei. Curba rosie,
+    cu forma exponentiala, este scenariul cel mai rau. Aceasta se extinde in sus, la infinit, insemnand ca se va infecta
+    toata
+    populatia globului. Acest caz este fals, in viata reala neexistand asemenea curbe. Orice epidemie incepe pe o
+    asemenea curba,
+    pana se "curbeaza" la mijloc (cum se vede pe curba albastra), in momentul in care incepe sa scada rata de infectare.
+    Depinde
+    doar de noi cat mai alungim curba albastra pe verticala, crescand numarul de cazuri sau daca ne oprim cat mai
+    curand.</p>
+<h3>Cu datele curente, epidemia se va incheia pe <font color="red">{{ end_date_str }}</font>, cu un numar de <font
+        color="red">{{ n_confirmed }}</font> cazuri
+    confirmate.</h3>
 {% endblock %}

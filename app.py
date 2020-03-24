@@ -1,10 +1,10 @@
 from flask import Flask, render_template
 from apscheduler.schedulers.background import BackgroundScheduler
 from backend.fetch import *
-from config.config import URL, UPDATE_INTERVAL
+from config.config import *
 import atexit
+from datetime import datetime, timedelta
 from utils.plot_utils import *
-from datetime import datetime
 from bokeh.layouts import column
 from bokeh.resources import INLINE
 from bokeh.embed import components
@@ -26,8 +26,10 @@ app = Flask(__name__, template_folder="templates", static_folder='static')
 def update_models():
     ro_data = mongodb_to_dict(db.cases.find({}))
     indices, confirmed_cases = prepare_data(ro_data)
-    logistic_values, _ = curve_fit(logistic_model, indices, confirmed_cases, p0=[2, 58, 100000])
-    exponential_values, _ = curve_fit(exponential_model, indices, confirmed_cases, p0=[1, 1, 1])
+    logistic_values, _ = curve_fit(logistic_model, indices, confirmed_cases, p0=[3, 60, 50000],
+                                   bounds=(0, [5., 365., 1000000]))
+    exponential_values, _ = curve_fit(exponential_model, indices, confirmed_cases, p0=[1, 1, 1],
+                                      bounds=(0, [5., 365., 1000000]))
     a, b, c = logistic_values[0], logistic_values[1], logistic_values[2]
     sol = int(fsolve(lambda x: logistic_model(x, a, b, c) - int(c), b))
 
@@ -45,15 +47,13 @@ def update_models():
 
 
 def update_data():
-    raw_json = get_raw_json(URL)
-    data = get_country_data(raw_json, "Romania")
+    data = get_cases(get_big_df(URL_CONFIRMED, URL_DEATHS))
     _, cases_list = get_country_date_to_cases(data)
 
     cases = db.cases
     for case in cases_list:
         result = cases.update_one({'_id': case[0]}, {
-            '$set': {'confirmed': case[1]['confirmed'], 'deaths': case[1]['deaths'],
-                     'recovered': case[1]['recovered']}},
+            '$set': {'confirmed': case[1]['confirmed'], 'deaths': case[1]['deaths']}},
                                   upsert=True)
     last_updated = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
     db.last_updated.update_one({'_id': 1}, {'$set': {'last_updated': last_updated}}, upsert=True)
@@ -66,9 +66,9 @@ def update_plots():
 
     overlapped_plot = Tabs(tabs=[
         Panel(
-            child=column(generate_overlap(ro_data, "orange", "red", "green", 'linear'), sizing_mode="stretch_width"),
+            child=column(generate_overlap(ro_data, "orange", "red", 'linear'), sizing_mode="stretch_width"),
             title="Liniar"),
-        Panel(child=column(generate_overlap(ro_data, "orange", "red", "green", 'log'), sizing_mode="stretch_width"),
+        Panel(child=column(generate_overlap(ro_data, "orange", "red", 'log'), sizing_mode="stretch_width"),
               title="Logaritmic")
     ], sizing_mode="stretch_width")
 
@@ -88,17 +88,7 @@ def update_plots():
               title="Logaritmic")
     ], sizing_mode="stretch_width")
 
-    recovered_cases_plot = Tabs(tabs=[
-        Panel(
-            child=column(generate_plot(ro_data, "recovered", "yellowgreen", "green", 'linear'),
-                         sizing_mode="stretch_width"),
-            title="Liniar"),
-        Panel(child=column(generate_plot(ro_data, "recovered", "yellowgreen", "green", 'log'),
-                           sizing_mode="stretch_width"),
-              title="Logaritmic")
-    ], sizing_mode="stretch_width")
-
-    col_layout_index = column(overlapped_plot, confirmed_cases_plot, deaths_cases_plot, recovered_cases_plot,
+    col_layout_index = column(overlapped_plot, confirmed_cases_plot, deaths_cases_plot,
                               sizing_mode="stretch_width")
     script_index, div_index = components(col_layout_index)
 
@@ -154,8 +144,13 @@ def predictions():
     last_updated = db.last_updated.find_one({'_id': 1})['last_updated']
     js_resources = INLINE.render_js()
     css_resources = INLINE.render_css()
+    params = db.models_params.find_one({'_id': 1})
+    sol = params['sol']
+    c = params['logistic_values'][2]
+    end_date = datetime.strptime("22.01.2020", "%d.%m.%Y") + timedelta(sol)
+    end_date_str = end_date.strftime("%d.%m.%Y")
     return render_template("predictions.html", js_resources=js_resources, css_resources=css_resources, script=script,
-                           div=div, last_updated=last_updated)
+                           div=div, last_updated=last_updated, end_date_str=end_date_str, n_confirmed=int(c))
 
 
 @app.route("/sources")

@@ -99,7 +99,7 @@ def update_plots():
 
     logistic_plot = generate_logistic_exponential_plot(ro_data, sol, logistic_values[0], logistic_values[1],
                                                        logistic_values[2], exponential_values[0], exponential_values[1],
-                                                       exponential_values[2])
+                                                       exponential_values[2], 'linear')
     col_layout_preds = column(logistic_plot, sizing_mode="stretch_width")
     script_preds, div_preds = components(col_layout_preds)
 

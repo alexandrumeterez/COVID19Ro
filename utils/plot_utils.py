@@ -39,6 +39,7 @@ def generate_plot(data, type_of_case, line_color, circle_color, axis_type):
 def generate_overlap(data, line_color1, line_color2, axis_type):
     plot = figure(x_axis_type="datetime", y_axis_type=axis_type, y_axis_label="Nr. cazuri confirmate")
 
+
     xaxis = list(data.keys())
     yaxis_confirmed = [x["confirmed"] for x in data.values()]
     yaxis_deaths = [x["deaths"] for x in data.values()]
@@ -62,7 +63,8 @@ def generate_overlap(data, line_color1, line_color2, axis_type):
     return plot
 
 
-def generate_logistic_exponential_plot(data, last_day_number, a_logistic, b_logistic, c_logistic, a_exp, b_exp, c_exp):
+def generate_logistic_exponential_plot(data, last_day_number, a_logistic, b_logistic, c_logistic, a_exp, b_exp, c_exp,
+                                       range_type):
     dates = list(data.keys())
 
     pred_x_range = list(range(0, last_day_number))

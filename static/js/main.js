@@ -1,5 +1,4 @@
 (function($) {
-
 	"use strict";
 
 	var fullHeight = function() {
@@ -10,10 +9,18 @@
 		});
 
 	};
+
 	fullHeight();
+    console.log("TEST");
 
 	$('#sidebarCollapse').on('click', function () {
+	    console.log("TESTevent");
+
       $('#sidebar').toggleClass('active');
+      	    console.log("TESTeventafter");
+
   });
+      console.log("TESTafteronclick");
+
 
 })(jQuery);

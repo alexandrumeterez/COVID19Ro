@@ -11,6 +11,8 @@
   gtag('config', 'UA-161620217-1');
 
 
+
+
     </script>
     <meta charset="utf-8">
     <meta http-equiv="content-type" content="text/html; charset=utf-8">
@@ -22,6 +24,9 @@
     <link href="https://fonts.googleapis.com/css?family=Poppins:300,400,500,600,700,800,900" rel="stylesheet">
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+<!--    <script src="{{ url_for('static', filename='js/jquery.min.js') }}"></script>-->
+
+
     {% block scripts %}{% endblock %}
 
 
@@ -30,7 +35,13 @@
 
 <div class="wrapper d-flex align-items-stretch">
     <nav id="sidebar">
-
+        <div class="custom-menu">
+            <button type="button" id="sidebarCollapse" onclick="document.getElementById('sidebar').classList.toggle('active');"
+                    class="btn btn-primary">
+                <i class="fa fa-bars"></i>
+                <span class="sr-only">Toggle Menu</span>
+            </button>
+        </div>
         <h1><a href="https://github.com/alexandrumeterez/COVID19Ro" class="logo">COVID-19Ro</a></h1>
         {% block sidebar %}{% endblock %}
     </nav>

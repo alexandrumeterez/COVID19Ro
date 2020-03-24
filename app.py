@@ -17,8 +17,9 @@ from pymongo import MongoClient
 import os
 from bokeh.models.widgets import Tabs, Panel
 
-client = MongoClient(os.environ['MONGODB_URI'], retryWrites=False)
-db = client.get_default_database()
+# client = MongoClient(os.environ['MONGODB_URI'], retryWrites=False)
+client = MongoClient()
+db = client.covid
 
 app = Flask(__name__, template_folder="templates", static_folder='static')
 

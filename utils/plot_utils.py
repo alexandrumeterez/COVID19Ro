@@ -64,7 +64,7 @@ def generate_overlap(data, line_color1, line_color2, axis_type):
 
 
 def generate_logistic_exponential_plot(data, last_day_number, a_logistic, b_logistic, c_logistic, a_exp, b_exp, c_exp,
-                                       range_type):
+                                       y_range):
     dates = list(data.keys())
 
     pred_x_range = list(range(0, last_day_number))
@@ -74,7 +74,7 @@ def generate_logistic_exponential_plot(data, last_day_number, a_logistic, b_logi
     yaxis_predicted_logistic = [logistic_model(x, a_logistic, b_logistic, c_logistic) for x in pred_x_range]
     yaxis_predicted_exponential = [exponential_model(x, a_exp, b_exp, c_exp) for x in pred_x_range]
 
-    plot = figure(x_axis_type="datetime", y_axis_label="Nr. cazuri confirmate", y_range=(-100, 3000))
+    plot = figure(x_axis_type="datetime", y_axis_label="Nr. cazuri confirmate", y_range=(0, y_range))
 
     plot.xaxis.formatter = DatetimeTickFormatter(months=["%d/%m/%Y"], days=["%d/%m/%Y"], hours=["%d/%m/%Y"],
                                                  minutes=["%d/%m/%Y"])

@@ -16,10 +16,15 @@ from utils.extra import mongodb_to_dict
 from pymongo import MongoClient
 import os
 from bokeh.models.widgets import Tabs, Panel
+from models.data import *
 
-client = MongoClient(os.environ['MONGODB_URI'], retryWrites=False)
-# client = MongoClient()
-db = client.get_default_database()
+assert ENVIRONMENT in ["DEPLOY", "DEBUG"], "Environment must be DEPLOY or DEBUG"
+if ENVIRONMENT == "DEPLOY":
+    client = MongoClient(os.environ['MONGODB_URI'], retryWrites=False)
+    db = client.get_default_database()
+elif ENVIRONMENT == "DEBUG":
+    client = MongoClient()
+    db = client.covid
 
 app = Flask(__name__, template_folder="templates", static_folder='static')
 
@@ -27,10 +32,11 @@ app = Flask(__name__, template_folder="templates", static_folder='static')
 def update_models():
     ro_data = mongodb_to_dict(db.cases.find({}))
     indices, confirmed_cases = prepare_data(ro_data)
-    logistic_values, _ = curve_fit(logistic_model, indices, confirmed_cases, p0=[3, 60, 50000],
-                                   bounds=(0, [5., 365., 1000000]))
-    exponential_values, _ = curve_fit(exponential_model, indices, confirmed_cases, p0=[1, 1, 1],
-                                      bounds=(0, [5., 365., 1000000]))
+    logistic_values, logistic_cov = curve_fit(logistic_model, xdata=indices, ydata=confirmed_cases, bounds=LOG_BOUNDS,
+                                              maxfev=10000)
+    exponential_values, exponential_cov = curve_fit(exponential_model, xdata=indices, ydata=confirmed_cases,
+                                                    bounds=EXP_BOUNDS,
+                                                    maxfev=10000)
     a, b, c = logistic_values[0], logistic_values[1], logistic_values[2]
     sol = int(fsolve(lambda x: logistic_model(x, a, b, c) - int(c), b))
 
@@ -100,7 +106,7 @@ def update_plots():
 
     logistic_plot = generate_logistic_exponential_plot(ro_data, sol, logistic_values[0], logistic_values[1],
                                                        logistic_values[2], exponential_values[0], exponential_values[1],
-                                                       exponential_values[2], 'linear')
+                                                       exponential_values[2], y_range=logistic_values[2])
     col_layout_preds = column(logistic_plot, sizing_mode="stretch_width")
     script_preds, div_preds = components(col_layout_preds)
 
